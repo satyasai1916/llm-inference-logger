@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String?
+  provider  String
+  model     String
+  status    String    @default("active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String       @map("conversation_id")
+  role           String
+  content        String
+  tokenCount     Int?         @map("token_count")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model InferenceLog {
+  id                  Int      @id @default(autoincrement())
+  sessionId           String?  @map("session_id")
+  provider            String
+  model               String
+  status              String
+  errorMessage        String?  @map("error_message")
+  inputTokens         Int      @default(0) @map("input_tokens")
+  outputTokens        Int      @default(0) @map("output_tokens")
+  totalTokens         Int      @default(0) @map("total_tokens")
+  latencyMs           Float    @default(0) @map("latency_ms")
+  timeToFirstTokenMs  Float?   @map("time_to_first_token_ms")
+  startedAt           DateTime @map("started_at")
+  finishedAt          DateTime @map("finished_at")
+  inputPreview        String?  @map("input_preview")
+  outputPreview       String?  @map("output_preview")
+  costUsd             Float    @default(0) @map("cost_usd")
+  ingestedAt          DateTime @default(now()) @map("ingested_at")
+
+  @@index([sessionId])
+  @@index([startedAt])
+  @@index([provider, model])
+  @@map("inference_logs")
+}
